@@ -1,6 +1,7 @@
 import React from 'react';
 import { useEditorState } from '../hooks/useEditorState';
 import { useElementActions } from '../hooks/useElementActions';
+import { FaColumns, FaImage, FaFont, FaSquare, FaLink, FaCode } from 'react-icons/fa';
 
 const NavigatorItem = ({ element, depth = 0 }) => {
     const { state } = useEditorState();
@@ -12,24 +13,38 @@ const NavigatorItem = ({ element, depth = 0 }) => {
         selectElement(element.id);
     };
 
+    const getIcon = (type) => {
+        switch (type) {
+            case 'container': return <FaColumns />;
+            case 'image': return <FaImage />;
+            case 'text': return <FaFont />;
+            case 'button': return <FaLink />;
+            case 'html': return <FaCode />;
+            default: return <FaSquare />;
+        }
+    };
+
     return (
-        <div style={{ marginLeft: `${depth * 10}px` }}>
+        <div>
             <div
                 onClick={handleSelect}
                 style={{
-                    padding: '8px',
+                    padding: '6px 8px',
+                    paddingLeft: `${depth * 12 + 12}px`,
                     cursor: 'pointer',
-                    backgroundColor: isSelected ? '#e6f7ff' : 'transparent',
-                    borderLeft: isSelected ? '3px solid #1890ff' : '3px solid transparent',
+                    backgroundColor: isSelected ? 'var(--primary)' : 'transparent',
+                    color: isSelected ? '#fff' : 'var(--text)',
                     display: 'flex',
                     alignItems: 'center',
-                    fontSize: '13px'
+                    fontSize: '11px',
+                    gap: '8px',
+                    borderBottom: '1px solid rgba(255,255,255,0.02)'
                 }}
             >
-                <span style={{ marginRight: '5px' }}>
-                    {element.type === 'container' ? '⬜' : 'Item'}
+                <span style={{ opacity: 0.7, fontSize: '10px' }}>{getIcon(element.type)}</span>
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {element.content.tagName || element.type}
                 </span>
-                {element.type}
             </div>
             {element.children && element.children.length > 0 && (
                 <div>
@@ -46,17 +61,30 @@ const Navigator = () => {
     const { state } = useEditorState();
 
     return (
-        <div style={{ padding: '10px', height: '100%', overflowY: 'auto' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>Navigator</h3>
-            {state.elements.length === 0 ? (
-                <div style={{ color: '#999', fontSize: '12px', textAlign: 'center', marginTop: '20px' }}>
-                    No elements
-                </div>
-            ) : (
-                state.elements.map(el => (
-                    <NavigatorItem key={el.id} element={el} />
-                ))
-            )}
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div
+                style={{
+                    padding: '8px 12px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: 'var(--text-muted)',
+                    backgroundColor: 'var(--panel-alt)',
+                    borderBottom: '1px solid var(--border)'
+                }}
+            >
+                NAVIGATOR
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+                {state.elements.length === 0 ? (
+                    <div style={{ padding: '20px', color: 'var(--text-muted)', textAlign: 'center', fontSize: '11px' }}>
+                        Empty Canvas
+                    </div>
+                ) : (
+                    state.elements.map(el => (
+                        <NavigatorItem key={el.id} element={el} />
+                    ))
+                )}
+            </div>
         </div>
     );
 };

@@ -20,22 +20,27 @@ const ContainerElement = ({ element, isSelected }) => {
         e.stopPropagation();
     };
 
+    const Tag = element.content.tagName || 'div';
+
     const style = {
         padding: element.content.padding || '20px',
         backgroundColor: element.content.backgroundColor || 'transparent',
-        border: isSelected ? '2px solid #2271b1' : '1px dashed #ccc',
-        minHeight: '100px',
+        border: isSelected ? '2px solid var(--codera-accent, #2271b1)' : '1px dashed var(--codera-border, #ccc)', // Use CSS var if available
+        minHeight: element.content.minHeight || '100px',
         display: 'flex',
         flexDirection: element.content.flexDirection || 'column',
         gap: element.content.gap || '10px',
-        position: 'relative'
+        position: 'relative',
+        width: element.content.width || 'auto',
+        color: 'inherit'
     };
 
     return (
-        <div
+        <Tag
             style={style}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
+            className="codera-container"
         >
             {element.children && element.children.length > 0 ? (
                 element.children.map(child => (
@@ -45,14 +50,18 @@ const ContainerElement = ({ element, isSelected }) => {
                 <div style={{
                     padding: '20px',
                     textAlign: 'center',
-                    color: '#999',
+                    color: 'inherit',
+                    opacity: 0.5,
                     fontSize: '12px',
-                    pointerEvents: 'none'
+                    pointerEvents: 'none',
+                    border: '1px dotted currentColor',
+                    borderRadius: '4px',
+                    margin: '10px'
                 }}>
-                    Drop elements here
+                    {Tag} Container
                 </div>
             )}
-        </div>
+        </Tag>
     );
 };
 

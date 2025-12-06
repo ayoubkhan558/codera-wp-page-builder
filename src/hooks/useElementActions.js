@@ -40,57 +40,95 @@ export const useElementActions = () => {
         });
     };
 
-    const addElement = (type, parentId = null) => {
+    // Recursive helper to find element
+    const findElement = (elements, id) => {
+        for (const el of elements) {
+            if (el.id === id) return el;
+            if (el.children) {
+                const found = findElement(el.children, id);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+
+
+    const addElement = (type, parentId = null, extraProps = {}) => {
         const newElement = {
             id: uuidv4(),
             type,
-            content: {},
-            children: [] // Initialize with empty children array
+            children: [],
+            content: {
+                ...extraProps, // tagName, etc.
+                padding: '10px',
+                margin: '0',
+                color: '#e5e5e5',
+                fontSize: '16px',
+                backgroundColor: 'transparent',
+                // Text default
+                text: type === 'text' ? 'New Text' : '',
+                // Image defaults
+                url: type === 'image' ? 'https://via.placeholder.com/150' : '',
+                // Button defaults
+                label: type === 'button' ? 'Click Me' : '',
+                // Container defaults
+                flexDirection: 'column',
+                gap: '0px',
+                // HTML
+                html: '<div>HTML</div>'
+            }
         };
 
-        // Set defaults based on type
-        switch (type) {
-            case 'text':
-                newElement.content = { text: 'New Text Block', color: '#000000', fontSize: '16px' };
-                break;
-            case 'image':
-                newElement.content = { url: 'https://via.placeholder.com/300', alt: 'Placeholder', width: '100%' };
-                break;
-            case 'button':
-                newElement.content = { label: 'Click Me', url: '#', backgroundColor: '#0073aa', color: '#ffffff' };
-                break;
-            case 'container':
-                newElement.content = { padding: '20px', backgroundColor: '#f9f9f9', flexDirection: 'column', gap: '10px' };
-                break;
-            default:
-                break;
+        // Specific type defaults
+        if (type === 'container') {
+            if (!newElement.content.tagName) newElement.content.tagName = 'div';
+            if (newElement.content.tagName === 'section') newElement.content.minHeight = '100px';
         }
 
         if (parentId) {
-            // Add to specific parent
             const newElements = addElementToParent(state.elements, parentId, newElement);
-            dispatch({ type: 'SET_ELEMENTS', payload: newElements });
+            dispatch({ type: 'UPDATE_ELEMENTS', payload: newElements });
         } else {
             // Add to root
             dispatch({ type: 'ADD_ELEMENT', payload: newElement });
         }
 
-        // Auto select new element
+        // Auto select
         dispatch({ type: 'SELECT_ELEMENT', payload: newElement.id });
     };
 
     const updateElement = (id, updates) => {
         const newElements = updateElementInTree(state.elements, id, updates);
-        dispatch({ type: 'SET_ELEMENTS', payload: newElements });
+        dispatch({ type: 'UPDATE_ELEMENTS', payload: newElements });
     };
 
     const removeElement = (id) => {
         const newElements = removeElementFromTree(state.elements, id);
-        dispatch({ type: 'SET_ELEMENTS', payload: newElements });
-        // Deselect if removed
+        dispatch({ type: 'UPDATE_ELEMENTS', payload: newElements });
         if (state.selectedElementId === id) {
             dispatch({ type: 'SELECT_ELEMENT', payload: null });
         }
+    };
+
+    const moveElement = (sourceId, targetParentId) => {
+        if (sourceId === targetParentId) return;
+
+        // 1. Find the element
+        const elementToMove = findElement(state.elements, sourceId);
+        if (!elementToMove) return;
+
+        // 2. Remove from old pos
+        const elementsWithoutSource = removeElementFromTree(state.elements, sourceId);
+
+        // 3. Add to new pos
+        let newElements;
+        if (targetParentId) {
+            newElements = addElementToParent(elementsWithoutSource, targetParentId, elementToMove);
+        } else {
+            newElements = [...elementsWithoutSource, elementToMove];
+        }
+
+        dispatch({ type: 'UPDATE_ELEMENTS', payload: newElements });
     };
 
     const selectElement = (id) => {
@@ -134,6 +172,7 @@ export const useElementActions = () => {
         addElement,
         updateElement,
         removeElement,
+        moveElement,
         selectElement,
         saveLayout
     };

@@ -87,6 +87,40 @@ class Codera_Page_Builder
         $html = '';
 
         switch ($type) {
+            case 'container':
+                $tag = !empty($content['tagName']) ? $content['tagName'] : 'div';
+                $allowed_tags = array('div', 'section', 'article', 'main', 'header', 'footer');
+                if (!in_array($tag, $allowed_tags)) {
+                    $tag = 'div';
+                }
+
+                $styles = '';
+                if (!empty($content['padding']))
+                    $styles .= 'padding: ' . esc_attr($content['padding']) . ';';
+                if (!empty($content['backgroundColor']))
+                    $styles .= 'background-color: ' . esc_attr($content['backgroundColor']) . ';';
+                if (!empty($content['flexDirection']))
+                    $styles .= 'display: flex; flex-direction: ' . esc_attr($content['flexDirection']) . ';';
+                if (!empty($content['gap']))
+                    $styles .= 'gap: ' . esc_attr($content['gap']) . ';';
+                if (!empty($content['minHeight']))
+                    $styles .= 'min-height: ' . esc_attr($content['minHeight']) . ';';
+
+                $inner_html = '';
+                if (!empty($element['children']) && is_array($element['children'])) {
+                    foreach ($element['children'] as $child) {
+                        $inner_html .= $this->render_element($child);
+                    }
+                }
+
+                $html = sprintf(
+                    '<%1$s style="%2$s" class="codera-container">%3$s</%1$s>',
+                    $tag,
+                    $styles,
+                    $inner_html
+                );
+                break;
+
             case 'text':
                 $styles = 'padding: 10px;';
                 if (!empty($content['color']))
