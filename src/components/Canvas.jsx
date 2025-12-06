@@ -3,7 +3,7 @@ import { useEditorState } from '../hooks/useEditorState';
 import { useElementActions } from '../hooks/useElementActions';
 import ElementRenderer from './ElementRenderer';
 
-const Canvas = () => {
+const Canvas = ({ viewMode }) => {
     const { state } = useEditorState();
     const { addElement, selectElement } = useElementActions();
     const canvasRef = useRef(null);
@@ -31,6 +31,22 @@ const Canvas = () => {
         }
     };
 
+    const getCanvasStyle = () => {
+        let width = '100%';
+        if (viewMode === 'tablet') width = '768px';
+        if (viewMode === 'mobile') width = '375px';
+
+        return {
+            width: width,
+            maxWidth: '1200px',
+            minHeight: '800px',
+            backgroundColor: 'transparent',
+            boxShadow: '0 0 40px rgba(0,0,0,0.1)',
+            marginBottom: '50px',
+            transition: 'width 0.3s ease'
+        };
+    };
+
     return (
         <div
             className="codera-canvas-bg"
@@ -48,14 +64,7 @@ const Canvas = () => {
             onDragOver={onDragOver}
         >
             <div
-                style={{
-                    width: '100%',
-                    maxWidth: '1200px',
-                    minHeight: '800px',
-                    backgroundColor: 'transparent',
-                    boxShadow: '0 0 40px rgba(0,0,0,0.1)',
-                    marginBottom: '50px'
-                }}
+                style={getCanvasStyle()}
             >
                 {state.isLoading ? (
                     <div style={{ padding: '40px', color: 'var(--text-muted)', textAlign: 'center' }}>Loading...</div>

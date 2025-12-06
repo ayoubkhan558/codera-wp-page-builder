@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { Panel, PanelHeader, PanelSection, Input } from '../ui';
+import React, { useState, useEffect } from 'react';
+import { Panel, PanelHeader, PanelSection, Input, Button } from '../ui';
+import { useEditorState } from '../hooks/useEditorState';
+import InspectorPanel from './InspectorPanel';
 import {
     FaCube, FaColumns, FaHeading, FaParagraph, FaImage, FaLink,
-    FaCode, FaRegSquare, FaList, FaSearch
+    FaCode, FaRegSquare, FaList, FaSearch, FaPaintBrush, FaEdit, FaPlus
 } from 'react-icons/fa';
 
 const DraggableItem = ({ type, label, icon, tagName }) => {
@@ -53,56 +55,120 @@ const ElementGrid = ({ children }) => (
 );
 
 const Sidebar = () => {
+    const { state } = useEditorState();
+    const [activeTab, setActiveTab] = useState('add'); // 'add', 'content', 'style'
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Switch tabs based on selection
+    useEffect(() => {
+        if (state.selectedElementId) {
+            setActiveTab('content');
+        } else {
+            setActiveTab('add');
+        }
+    }, [state.selectedElementId]);
+
+    const tabs = [
+        { id: 'add', icon: <FaPlus />, label: 'Add' },
+        { id: 'content', icon: <FaEdit />, label: 'Content', disabled: !state.selectedElementId },
+        { id: 'style', icon: <FaPaintBrush />, label: 'Style', disabled: !state.selectedElementId },
+    ];
 
     return (
         <Panel>
-            <PanelHeader title="Add Elements" />
-
-            <div style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ position: 'relative' }}>
-                    <FaSearch style={{ position: 'absolute', left: '8px', top: '8px', color: 'var(--text-muted)', fontSize: '12px' }} />
-                    <input
-                        type="text"
-                        placeholder="Search elements..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+            {/* Tab Header */}
+            <div style={{
+                display: 'flex',
+                borderBottom: '1px solid var(--border)',
+                backgroundColor: 'var(--panel-header)'
+            }}>
+                {tabs.map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => !tab.disabled && setActiveTab(tab.id)}
+                        disabled={tab.disabled}
                         style={{
-                            width: '100%',
-                            background: 'rgba(0,0,0,0.2)',
-                            border: '1px solid var(--border)',
-                            padding: '6px 8px 6px 28px',
-                            borderRadius: '4px',
-                            color: 'var(--text)',
+                            flex: 1,
+                            padding: '12px',
+                            background: activeTab === tab.id ? 'var(--bg)' : 'transparent',
+                            border: 'none',
+                            borderBottom: activeTab === tab.id ? '2px solid var(--primary)' : '2px solid transparent',
+                            color: activeTab === tab.id ? 'var(--primary)' : (tab.disabled ? 'var(--text-disabled)' : 'var(--text-muted)'),
+                            cursor: tab.disabled ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
                             fontSize: '12px',
-                            outline: 'none'
+                            fontWeight: 600,
+                            outline: 'none',
+                            opacity: tab.disabled ? 0.3 : 1
                         }}
-                    />
-                </div>
+                        title={tab.label}
+                    >
+                        {tab.icon}
+                        <span>{tab.label}</span>
+                    </button>
+                ))}
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-                <PanelSection title="Layout" defaultOpen={true}>
-                    <ElementGrid>
-                        <DraggableItem type="container" tagName="section" label="Section" icon={<FaColumns />} />
-                        <DraggableItem type="container" tagName="div" label="Container" icon={<FaRegSquare />} />
-                        <DraggableItem type="container" tagName="article" label="Article" icon={<FaCube />} />
-                        <DraggableItem type="container" tagName="main" label="Main" icon={<FaCube />} />
-                        <DraggableItem type="container" tagName="header" label="Header" icon={<FaList />} />
-                        <DraggableItem type="container" tagName="footer" label="Footer" icon={<FaList />} />
-                    </ElementGrid>
-                </PanelSection>
+            {/* Tab Content */}
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
-                <PanelSection title="Basic" defaultOpen={true}>
-                    <ElementGrid>
-                        <DraggableItem type="text" label="Heading" icon={<FaHeading />} />
-                        <DraggableItem type="text" label="Paragraph" icon={<FaParagraph />} />
-                        <DraggableItem type="button" label="Button" icon={<FaLink />} />
-                        <DraggableItem type="image" label="Image" icon={<FaImage />} />
-                        <DraggableItem type="html" label="HTML" icon={<FaCode />} />
-                        <DraggableItem type="text" label="Text Block" icon={<FaParagraph />} />
-                    </ElementGrid>
-                </PanelSection>
+                {/* ADD MODE */}
+                {activeTab === 'add' && (
+                    <div style={{ flex: 1, overflowY: 'auto' }}>
+                        <div style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
+                            <div style={{ position: 'relative' }}>
+                                <FaSearch style={{ position: 'absolute', left: '8px', top: '8px', color: 'var(--text-muted)', fontSize: '12px' }} />
+                                <input
+                                    type="text"
+                                    placeholder="Search elements..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        background: 'rgba(0,0,0,0.2)',
+                                        border: '1px solid var(--border)',
+                                        padding: '6px 8px 6px 28px',
+                                        borderRadius: '4px',
+                                        color: 'var(--text)',
+                                        fontSize: '12px',
+                                        outline: 'none'
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        <div style={{ paddingBottom: '20px' }}>
+                            <PanelSection title="Layout" defaultOpen={true}>
+                                <ElementGrid>
+                                    <DraggableItem type="container" tagName="section" label="Section" icon={<FaColumns />} />
+                                    <DraggableItem type="container" tagName="div" label="Container" icon={<FaRegSquare />} />
+                                    <DraggableItem type="container" tagName="article" label="Article" icon={<FaCube />} />
+                                    <DraggableItem type="container" tagName="main" label="Main" icon={<FaCube />} />
+                                </ElementGrid>
+                            </PanelSection>
+
+                            <PanelSection title="Basic" defaultOpen={true}>
+                                <ElementGrid>
+                                    <DraggableItem type="text" label="Heading" icon={<FaHeading />} />
+                                    <DraggableItem type="text" label="Paragraph" icon={<FaParagraph />} />
+                                    <DraggableItem type="button" label="Button" icon={<FaLink />} />
+                                    <DraggableItem type="image" label="Image" icon={<FaImage />} />
+                                    <DraggableItem type="html" label="HTML" icon={<FaCode />} />
+                                    <DraggableItem type="text" label="Text Block" icon={<FaParagraph />} />
+                                </ElementGrid>
+                            </PanelSection>
+                        </div>
+                    </div>
+                )}
+
+                {/* EDIT MODES */}
+                {(activeTab === 'content' || activeTab === 'style') && (
+                    <InspectorPanel activeTab={activeTab} />
+                )}
+
             </div>
         </Panel>
     );

@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { IconButton } from '../ui';
-import { useEditorState } from '../hooks/useEditorState';
 import {
-    FaSave, FaEye, FaUndo, FaRedo, FaDesktop, FaTabletAlt, FaMobileAlt,
-    FaColumns, FaLayerGroup, FaCog
+    FaSave, FaUndo, FaRedo, FaDesktop, FaTabletAlt, FaMobileAlt,
+    FaColumns, FaLayerGroup
 } from 'react-icons/fa';
 
 const Topbar = ({
@@ -12,11 +11,10 @@ const Topbar = ({
     isRightVisible,
     toggleRight,
     onSave,
-    isSaving
+    isSaving,
+    viewMode,
+    setViewMode
 }) => {
-    const { state } = useEditorState();
-    const [zoom, setZoom] = useState(100);
-
     return (
         <div style={{
             height: 'var(--header-height)',
@@ -46,23 +44,35 @@ const Topbar = ({
                         icon={<FaLayerGroup />}
                         active={isRightVisible}
                         onClick={toggleRight}
-                        title="Toggle Inspector"
+                        title="Toggle Navigator"
                     />
                 </div>
             </div>
 
             {/* Center: Device & Validation */}
             <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '6px' }}>
-                <IconButton icon={<FaDesktop />} active={true} title="Desktop View" />
-                <IconButton icon={<FaTabletAlt />} title="Tablet View" />
-                <IconButton icon={<FaMobileAlt />} title="Mobile View" />
+                <IconButton
+                    icon={<FaDesktop />}
+                    active={viewMode === 'desktop'}
+                    onClick={() => setViewMode('desktop')}
+                    title="Desktop View"
+                />
+                <IconButton
+                    icon={<FaTabletAlt />}
+                    active={viewMode === 'tablet'}
+                    onClick={() => setViewMode('tablet')}
+                    title="Tablet View"
+                />
+                <IconButton
+                    icon={<FaMobileAlt />}
+                    active={viewMode === 'mobile'}
+                    onClick={() => setViewMode('mobile')}
+                    title="Mobile View"
+                />
             </div>
 
             {/* Right: Actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    Zoom: {zoom}%
-                </div>
                 <div style={{ width: '1px', height: '20px', background: 'var(--border)' }}></div>
                 <IconButton
                     icon={<FaUndo />}

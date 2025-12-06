@@ -7,27 +7,33 @@ const DraggableWrapper = ({ element, children }) => {
     const { state } = useEditorState();
     const ref = useRef(null);
     const isSelected = state.selectedElementId === element.id;
+    const [isOver, setIsOver] = React.useState(false);
 
     const handleDragStart = (e) => {
         e.stopPropagation();
         e.dataTransfer.setData('sourceId', element.id);
         e.dataTransfer.effectAllowed = 'move';
-        // setTimeout(() => ref.current.style.opacity = '0.5', 0);
-    };
-
-    const handleDragEnd = (e) => {
-        // ref.current.style.opacity = '1';
     };
 
     const handleDragOver = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        // Add visual indicator logic here (border color change)
+        // Only show indicator if dropping is possible (e.g. into container)
+        if (element.type === 'container') {
+            setIsOver(true);
+        }
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOver(false);
     };
 
     const handleDrop = (e) => {
         e.preventDefault();
         e.stopPropagation();
+        setIsOver(false);
 
         const sourceId = e.dataTransfer.getData('sourceId');
         const type = e.dataTransfer.getData('type');
@@ -58,20 +64,19 @@ const DraggableWrapper = ({ element, children }) => {
             ref={ref}
             draggable
             onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
             onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={handleClick}
             className={`codera-element ${isSelected ? 'selected' : ''}`}
             style={{
                 position: 'relative',
-                outline: isSelected ? '1px solid var(--primary)' : '1px dashed transparent',
+                outline: isSelected ? '1px solid var(--primary)' : (isOver ? '2px solid var(--accent)' : '1px dashed transparent'),
                 outlineOffset: '-1px',
+                backgroundColor: isOver ? 'rgba(0, 183, 255, 0.1)' : ((element.type === 'container' && (!element.children || element.children.length === 0)) ? 'rgba(255,255,255,0.02)' : 'transparent'),
                 cursor: 'default',
-                transition: 'outline-color 0.2s',
+                transition: 'outline-color 0.2s, background-color 0.2s',
                 minHeight: element.type === 'container' ? '50px' : 'auto',
-                ...((element.type === 'container' && (!element.children || element.children.length === 0))
-                    ? { backgroundColor: 'rgba(255,255,255,0.02)' } : {})
             }}
         >
             {isSelected && (

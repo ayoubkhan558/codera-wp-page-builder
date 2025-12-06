@@ -5,12 +5,43 @@ import { FaColumns, FaImage, FaFont, FaSquare, FaLink, FaCode } from 'react-icon
 
 const NavigatorItem = ({ element, depth = 0 }) => {
     const { state } = useEditorState();
-    const { selectElement } = useElementActions();
+    const { selectElement, moveElement } = useElementActions();
     const isSelected = state.selectedElementId === element.id;
+    const [isOver, setIsOver] = React.useState(false);
 
     const handleSelect = (e) => {
         e.stopPropagation();
         selectElement(element.id);
+    };
+
+    const handleDragStart = (e) => {
+        e.stopPropagation();
+        e.dataTransfer.setData('sourceId', element.id);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (element.type === 'container') {
+            setIsOver(true);
+        }
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOver(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOver(false);
+        const sourceId = e.dataTransfer.getData('sourceId');
+        if (sourceId && sourceId !== element.id && element.type === 'container') {
+            moveElement(sourceId, element.id);
+        }
     };
 
     const getIcon = (type) => {
@@ -27,18 +58,24 @@ const NavigatorItem = ({ element, depth = 0 }) => {
     return (
         <div>
             <div
+                draggable
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
                 onClick={handleSelect}
                 style={{
                     padding: '6px 8px',
                     paddingLeft: `${depth * 12 + 12}px`,
                     cursor: 'pointer',
-                    backgroundColor: isSelected ? 'var(--primary)' : 'transparent',
+                    backgroundColor: isOver ? 'rgba(0,183,255,0.2)' : (isSelected ? 'var(--primary)' : 'transparent'),
                     color: isSelected ? '#fff' : 'var(--text)',
                     display: 'flex',
                     alignItems: 'center',
                     fontSize: '11px',
                     gap: '8px',
-                    borderBottom: '1px solid rgba(255,255,255,0.02)'
+                    borderBottom: '1px solid rgba(255,255,255,0.02)',
+                    opacity: isOver ? 0.8 : 1
                 }}
             >
                 <span style={{ opacity: 0.7, fontSize: '10px' }}>{getIcon(element.type)}</span>

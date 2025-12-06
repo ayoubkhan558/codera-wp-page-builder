@@ -95,16 +95,31 @@ class Codera_Page_Builder
                 }
 
                 $styles = '';
-                if (!empty($content['padding']))
-                    $styles .= 'padding: ' . esc_attr($content['padding']) . ';';
-                if (!empty($content['backgroundColor']))
-                    $styles .= 'background-color: ' . esc_attr($content['backgroundColor']) . ';';
-                if (!empty($content['flexDirection']))
-                    $styles .= 'display: flex; flex-direction: ' . esc_attr($content['flexDirection']) . ';';
-                if (!empty($content['gap']))
-                    $styles .= 'gap: ' . esc_attr($content['gap']) . ';';
+                // Dimensions & Spacing
+                if (!empty($content['width']))
+                    $styles .= 'width: ' . esc_attr($content['width']) . ';';
+                if (!empty($content['height']))
+                    $styles .= 'height: ' . esc_attr($content['height']) . ';';
                 if (!empty($content['minHeight']))
                     $styles .= 'min-height: ' . esc_attr($content['minHeight']) . ';';
+                if (!empty($content['padding']))
+                    $styles .= 'padding: ' . esc_attr($content['padding']) . ';';
+                if (!empty($content['margin']))
+                    $styles .= 'margin: ' . esc_attr($content['margin']) . ';';
+                if (!empty($content['backgroundColor']))
+                    $styles .= 'background-color: ' . esc_attr($content['backgroundColor']) . ';';
+
+                // Flexbox
+                if (!empty($content['flexDirection'])) {
+                    $styles .= 'display: flex;';
+                    $styles .= 'flex-direction: ' . esc_attr($content['flexDirection']) . ';';
+                }
+                if (!empty($content['gap']))
+                    $styles .= 'gap: ' . esc_attr($content['gap']) . ';';
+                if (!empty($content['alignItems']))
+                    $styles .= 'align-items: ' . esc_attr($content['alignItems']) . ';';
+                if (!empty($content['justifyContent']))
+                    $styles .= 'justify-content: ' . esc_attr($content['justifyContent']) . ';';
 
                 $inner_html = '';
                 if (!empty($element['children']) && is_array($element['children'])) {
@@ -124,9 +139,12 @@ class Codera_Page_Builder
             case 'text':
                 $styles = 'padding: 10px;';
                 if (!empty($content['color']))
-                    $styles .= ' color: ' . esc_attr($content['color']) . ';';
+                    $styles .= 'color: ' . esc_attr($content['color']) . ';';
                 if (!empty($content['fontSize']))
-                    $styles .= ' font-size: ' . esc_attr($content['fontSize']) . ';';
+                    $styles .= 'font-size: ' . esc_attr($content['fontSize']) . ';';
+                if (!empty($content['textAlign']))
+                    $styles .= 'text-align: ' . esc_attr($content['textAlign']) . ';';
+
                 $html = sprintf(
                     '<div style="%s">%s</div>',
                     $styles,

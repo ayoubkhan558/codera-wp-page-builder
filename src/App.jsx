@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react';
 import Topbar from './components/Topbar';
 import ResizablePanel from './components/ResizablePanel';
 import Sidebar from './components/Sidebar';
-import InspectorPanel from './components/InspectorPanel';
+import Navigator from './components/Navigator';
 import Canvas from './components/Canvas';
 import { useElementActions } from './hooks/useElementActions';
 import { EditorProvider } from './hooks/useEditorState';
 
 const AppContent = () => {
-    const [leftWidth, setLeftWidth] = useState(280);
-    const [rightWidth, setRightWidth] = useState(300);
+    const [leftWidth, setLeftWidth] = useState(300);
+    const [rightWidth, setRightWidth] = useState(250);
     const [isLeftVisible, setIsLeftVisible] = useState(true);
     const [isRightVisible, setIsRightVisible] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [viewMode, setViewMode] = useState('desktop'); // 'desktop', 'tablet', 'mobile'
 
     const { saveLayout } = useElementActions();
 
@@ -40,18 +41,20 @@ const AppContent = () => {
                 toggleRight={() => setIsRightVisible(!isRightVisible)}
                 onSave={handleSave}
                 isSaving={isSaving}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
             />
 
             {/* Main Layout */}
             <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
-                {/* Left Panel */}
+                {/* Left Panel: Elements & Inspector & Settings */}
                 <ResizablePanel
                     width={leftWidth}
                     setWidth={setLeftWidth}
                     side="left"
                     visible={isLeftVisible}
-                    minWidth={240}
+                    minWidth={280}
                 >
                     <Sidebar />
                 </ResizablePanel>
@@ -65,18 +68,18 @@ const AppContent = () => {
                     overflow: 'hidden',
                     position: 'relative'
                 }}>
-                    <Canvas />
+                    <Canvas viewMode={viewMode} />
                 </div>
 
-                {/* Right Panel */}
+                {/* Right Panel: Navigator / Layers */}
                 <ResizablePanel
                     width={rightWidth}
                     setWidth={setRightWidth}
                     side="right"
                     visible={isRightVisible}
-                    minWidth={280}
+                    minWidth={200}
                 >
-                    <InspectorPanel />
+                    <Navigator />
                 </ResizablePanel>
             </div>
         </div>
