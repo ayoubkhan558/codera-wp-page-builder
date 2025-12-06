@@ -45,7 +45,11 @@ class Codera_Page_Builder
 
         // Frontend Rendering
         add_filter('the_content', array($this, 'render_frontend_content'));
+
+        // Post States (Pages List)
+        add_filter('display_post_states', array($this, 'add_post_states'), 10, 2);
     }
+
 
     /**
      * Render the saved Codera layout on the frontend.
@@ -241,10 +245,18 @@ class Codera_Page_Builder
 
         if ($post_id) {
             $url = admin_url('admin.php?page=codera&post_id=' . $post_id);
+            $elements = get_post_meta($post_id, '_codera_layout', true);
+            $is_active = !empty($elements) && is_array($elements);
+
+            $title = '<span class="ab-icon dashicons dashicons-layout" style="margin-top: 2px;"></span> ' . esc_html__('Edit with Codera', 'codera');
+
+            if ($is_active) {
+                $title .= ' <span style="background: #2271b1; color: #fff; padding: 1px 6px; border-radius: 3px; font-size: 10px; vertical-align: top; margin-left: 5px;">ACTIVE</span>';
+            }
 
             $wp_admin_bar->add_node(array(
                 'id' => 'codera-edit',
-                'title' => '<span class="ab-icon dashicons dashicons-layout" style="margin-top: 2px;"></span> ' . esc_html__('Edit with Codera', 'codera'),
+                'title' => $title,
                 'href' => $url,
                 'meta' => array(
                     'class' => 'codera-edit-link',
@@ -252,6 +264,18 @@ class Codera_Page_Builder
                 )
             ));
         }
+    }
+
+    /**
+     * Add "Codera" state to post list.
+     */
+    public function add_post_states($post_states, $post)
+    {
+        $elements = get_post_meta($post->ID, '_codera_layout', true);
+        if (!empty($elements) && is_array($elements)) {
+            $post_states['codera'] = __('Codera', 'codera');
+        }
+        return $post_states;
     }
 
     /**
