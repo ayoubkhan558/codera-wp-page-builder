@@ -251,7 +251,7 @@ class Codera_Page_Builder
             $title = '<span class="ab-icon dashicons dashicons-layout" style="margin-top: 2px;"></span> ' . esc_html__('Edit with Codera', 'codera');
 
             if ($is_active) {
-                $title .= ' <span style="background: #2271b1; color: #fff; padding: 1px 6px; border-radius: 3px; font-size: 10px; vertical-align: top; margin-left: 5px;">ACTIVE</span>';
+                $title .= ' <span style="background: #2271b1; color: #fff; padding: 1px 6px; border-radius: 3px; font-size: 10px; vertical-align: middle; margin-left: 5px;">ACTIVE</span>';
             }
 
             $wp_admin_bar->add_node(array(
