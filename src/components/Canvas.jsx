@@ -10,9 +10,10 @@ const Canvas = () => {
 
     const onDrop = (e) => {
         e.preventDefault();
+        e.stopPropagation();
         const type = e.dataTransfer.getData('type');
         if (type) {
-            addElement(type);
+            addElement(type, null); // Add to root (parentId = null)
         }
     };
 
@@ -20,8 +21,11 @@ const Canvas = () => {
         e.preventDefault();
     };
 
-    const handleCanvasClick = () => {
-        selectElement(null);
+    const handleCanvasClick = (e) => {
+        // Only deselect if clicking strictly on the canvas, not a child
+        if (e.target === canvasRef.current || e.target.classList.contains('codera-canvas-wrapper')) {
+            selectElement(null);
+        }
     };
 
     return (
@@ -31,12 +35,13 @@ const Canvas = () => {
             onDragOver={onDragOver}
             onClick={handleCanvasClick}
             style={styles.canvas}
+            className="codera-canvas-root"
         >
             {state.isLoading ? (
                 <div style={styles.loading}>Loading layout...</div>
             ) : state.elements.length === 0 ? (
                 <div style={styles.empty}>
-                    <p>Drag elements here</p>
+                    <p>Drag elements here to start</p>
                 </div>
             ) : (
                 state.elements.map(el => (

@@ -7,7 +7,19 @@ const ElementControls = () => {
     const { state } = useEditorState();
     const { updateElement, removeElement } = useElementActions();
 
-    const selectedElement = state.elements.find(el => el.id === state.selectedElementId);
+    // Recursive helper to find element
+    const findElement = (elements, id) => {
+        for (const el of elements) {
+            if (el.id === id) return el;
+            if (el.children && el.children.length > 0) {
+                const found = findElement(el.children, id);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+
+    const selectedElement = findElement(state.elements, state.selectedElementId);
 
     if (!selectedElement) {
         return (

@@ -1,23 +1,65 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { EditorProvider } from './hooks/useEditorState';
 import Sidebar from './components/Sidebar';
 import Canvas from './components/Canvas';
-import ElementControls from './components/ElementControls';
+import Navigator from './components/Navigator'; // We'll create this next
+import { Icon, arrowLeft } from '@wordpress/icons';
 
 const AppContent = () => {
-    // We can access window.coderaData directly here or through a hook if we stored it in context.
     const postId = window.coderaData?.post_id;
 
+    useEffect(() => {
+        // Add class to body for full screen override
+        document.body.classList.add('codera-editor-active');
+        return () => {
+            document.body.classList.remove('codera-editor-active');
+        };
+    }, []);
+
+    const handleBack = () => {
+        window.history.back();
+    };
+
     return (
-        <div style={styles.container}>
-            <Sidebar />
-            <div style={styles.main}>
-                <div style={styles.topBar}>
-                    <h1 style={styles.title}>Codera Builder {postId ? `(Post #${postId})` : '(Global Template)'}</h1>
+        <div id="codera-app">
+            {/* Top Bar */}
+            <div className="codera-topbar">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <button
+                        onClick={handleBack}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
+                        title="Back to WordPress"
+                    >
+                        <Icon icon={arrowLeft} />
+                    </button>
+                    <span style={{ fontWeight: 600 }}>Codera Builder {postId && <span style={{ fontWeight: 400, color: '#666', fontSize: '0.9em' }}>— Post #{postId}</span>}</span>
                 </div>
-                <Canvas />
+                <div>
+                    {/* Save Button will be moved here or in actions */}
+                    <button className="components-button is-primary">Save Changes</button>
+                </div>
             </div>
-            <ElementControls />
+
+            {/* Main Workspace */}
+            <div className="codera-workspace">
+                {/* Left Sidebar: Widgets & Edit Settings */}
+                <div className="codera-sidebar-left">
+                    <Sidebar />
+                </div>
+
+                {/* Center: Canvas */}
+                <div className="codera-canvas-area">
+                    <div className="codera-canvas-wrapper">
+                        {/* Scale/Zoom wrapper could go here */}
+                        <Canvas />
+                    </div>
+                </div>
+
+                {/* Right Sidebar: Navigator (Structure) */}
+                <div className="codera-sidebar-right">
+                    <Navigator />
+                </div>
+            </div>
         </div>
     );
 };
@@ -28,36 +70,6 @@ const App = () => {
             <AppContent />
         </EditorProvider>
     );
-};
-
-const styles = {
-    container: {
-        display: 'flex',
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#f0f0f1',
-    },
-    main: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        position: 'relative'
-    },
-    topBar: {
-        height: '50px',
-        backgroundColor: '#fff',
-        borderBottom: '1px solid #ddd',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 20px',
-        justifyContent: 'space-between'
-    },
-    title: {
-        fontSize: '18px',
-        fontWeight: 600,
-        margin: 0
-    }
 };
 
 export default App;

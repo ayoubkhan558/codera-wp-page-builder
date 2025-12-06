@@ -2,6 +2,7 @@ import React from 'react';
 import TextElement from '../elements/TextElement';
 import ImageElement from '../elements/ImageElement';
 import ButtonElement from '../elements/ButtonElement';
+import ContainerElement from '../elements/ContainerElement';
 import { useElementActions } from '../hooks/useElementActions';
 import { useEditorState } from '../hooks/useEditorState';
 
@@ -26,6 +27,9 @@ const ElementRenderer = ({ element }) => {
             break;
         case 'button':
             Component = ButtonElement;
+            break;
+        case 'container':
+            Component = ContainerElement;
             break;
         default:
             return <div>Unknown Element</div>;

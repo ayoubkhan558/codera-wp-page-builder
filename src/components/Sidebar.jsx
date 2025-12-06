@@ -1,115 +1,122 @@
-import React from 'react';
-import { FaFont, FaImage, FaRegSquare, FaSave } from 'react-icons/fa';
-import { useElementActions } from '../hooks/useElementActions';
+import React, { useState, useEffect } from 'react';
 import { useEditorState } from '../hooks/useEditorState';
+import { useElementActions } from '../hooks/useElementActions';
+import ElementControls from './ElementControls';
+import { Icon, plus, settings, layout } from '@wordpress/icons';
 
-const Sidebar = () => {
-    const { saveLayout } = useElementActions();
-    const { state } = useEditorState();
-
-    const onDragStart = (e, type) => {
+const DraggableItem = ({ type, label, icon }) => {
+    const onDragStart = (e) => {
         e.dataTransfer.setData('type', type);
     };
 
     return (
-        <div style={styles.sidebar}>
-            <h3 style={styles.header}>Elements</h3>
-            <div style={styles.list}>
+        <div
+            draggable
+            onDragStart={onDragStart}
+            style={styles.draggableItem}
+        >
+            <div style={{ marginRight: '10px' }}>{icon}</div>
+            {label}
+        </div>
+    );
+};
+
+const Sidebar = () => {
+    const { state } = useEditorState();
+    const { saveLayout } = useElementActions();
+    const [activeTab, setActiveTab] = useState('add'); // 'add' or 'settings'
+
+    // Automatically switch to 'settings' tab when an element is selected
+    useEffect(() => {
+        if (state.selectedElementId) {
+            setActiveTab('settings');
+        }
+    }, [state.selectedElementId]);
+
+    const handleTabClick = (tab) => {
+        setActiveTab(tab);
+    };
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {/* Tabs */}
+            <div className="codera-tabs">
                 <div
-                    draggable
-                    onDragStart={(e) => onDragStart(e, 'text')}
-                    style={styles.item}
+                    className={`codera-tab ${activeTab === 'add' ? 'active' : ''}`}
+                    onClick={() => handleTabClick('add')}
                 >
-                    <FaFont style={styles.icon} /> Text
+                    <Icon icon={plus} style={{ marginRight: '5px' }} />
+                    Add
                 </div>
                 <div
-                    draggable
-                    onDragStart={(e) => onDragStart(e, 'image')}
-                    style={styles.item}
+                    className={`codera-tab ${activeTab === 'settings' ? 'active' : ''}`}
+                    onClick={() => handleTabClick('settings')}
                 >
-                    <FaImage style={styles.icon} /> Image
-                </div>
-                <div
-                    draggable
-                    onDragStart={(e) => onDragStart(e, 'button')}
-                    style={styles.item}
-                >
-                    <FaRegSquare style={styles.icon} /> Button
+                    <Icon icon={settings} style={{ marginRight: '5px' }} />
+                    Settings
                 </div>
             </div>
 
-            <div style={styles.divider}></div>
+            {/* Content */}
+            <div className="codera-panel-content">
+                {activeTab === 'add' && (
+                    <div>
+                        <h3 style={styles.sectionTitle}>Basic Elements</h3>
+                        <DraggableItem type="container" label="Container" icon={<Icon icon={layout} />} />
+                        <DraggableItem type="text" label="Text Block" icon="T" />
+                        <DraggableItem type="image" label="Image" icon="🖼️" />
+                        <DraggableItem type="button" label="Button" icon="🔘" />
 
-            <div style={styles.actions}>
-                <button
-                    onClick={saveLayout}
-                    style={styles.saveBtn}
-                    disabled={state.isSaving}
-                >
-                    <FaSave style={{ marginRight: '8px' }} />
-                    {state.isSaving ? 'Saving...' : 'Save Layout'}
-                </button>
+                        <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
+                            <button
+                                onClick={saveLayout}
+                                className="components-button is-primary"
+                                style={{ width: '100%', justifyContent: 'center' }}
+                                disabled={state.isSaving}
+                            >
+                                {state.isSaving ? 'Saving...' : 'Save Layout'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'settings' && (
+                    <div>
+                        {state.selectedElementId ? (
+                            <ElementControls />
+                        ) : (
+                            <div style={{ textAlign: 'center', color: '#888', padding: '20px' }}>
+                                <p>Select an element on the canvas to edit its properties.</p>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
 const styles = {
-    sidebar: {
-        width: '250px',
-        backgroundColor: '#fff',
-        borderRight: '1px solid #ddd',
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column'
-    },
-    header: {
-        marginTop: 0,
-        marginBottom: '20px',
-        fontSize: '16px',
-        color: '#333'
-    },
-    list: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px'
-    },
-    item: {
-        display: 'flex',
-        alignItems: 'center',
-        padding: '12px 15px',
-        backgroundColor: '#f6f7f7',
-        border: '1px solid #dcdcde',
+    draggableItem: {
+        padding: '12px',
+        margin: '0 0 10px 0',
+        backgroundColor: '#f8f9fa',
+        border: '1px solid #ddd',
         borderRadius: '4px',
         cursor: 'grab',
-        transition: 'all 0.2s',
-        fontSize: '14px',
-        color: '#3c434a'
-    },
-    icon: {
-        marginRight: '10px',
-        color: '#646970'
-    },
-    divider: {
-        marginTop: 'auto',
-        marginBottom: '20px',
-        height: '1px',
-        backgroundColor: '#eee'
-    },
-    actions: {
-    },
-    saveBtn: {
-        width: '100%',
-        padding: '10px',
-        backgroundColor: '#2271b1',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '14px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        fontSize: '14px',
+        fontWeight: 500,
+        color: '#333'
+    },
+    sectionTitle: {
+        fontSize: '13px',
+        textTransform: 'uppercase',
+        color: '#666',
+        marginTop: '0',
+        marginBottom: '15px',
+        fontWeight: 600
     }
 };
 
