@@ -1,0 +1,7 @@
+/* Admin styles for Codera Page Builder */
+#codera-app {
+    margin-left: -20px; /* Counteract WP admin padding */
+    height: calc(100vh - 32px);
+    display: flex;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
