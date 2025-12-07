@@ -4,134 +4,239 @@ import { v4 as uuidv4 } from 'uuid';
 export const useElementActions = () => {
     const { state, dispatch } = useEditorState();
 
-    // Recursive helper to find and update an element in the tree
-    const updateElementInTree = (elements, id, updates) => {
-        return elements.map(el => {
-            if (el.id === id) {
-                return { ...el, ...updates };
-            }
-            if (el.children && el.children.length > 0) {
-                return { ...el, children: updateElementInTree(el.children, id, updates) };
-            }
-            return el;
-        });
-    };
-
-    // Recursive helper to find and remove an element
-    const removeElementFromTree = (elements, id) => {
-        return elements.filter(el => el.id !== id).map(el => {
-            if (el.children) {
-                return { ...el, children: removeElementFromTree(el.children, id) };
-            }
-            return el;
-        });
-    };
-
-    // Recursive helper to add an element to a specific parent
-    const addElementToParent = (elements, parentId, newElement) => {
-        return elements.map(el => {
-            if (el.id === parentId) {
-                return { ...el, children: [...(el.children || []), newElement] };
-            }
-            if (el.children) {
-                return { ...el, children: addElementToParent(el.children, parentId, newElement) };
-            }
-            return el;
-        });
-    };
-
-    // Recursive helper to find element
-    const findElement = (elements, id) => {
+    // Find element by ID recursively
+    const findElementById = (elements, id) => {
         for (const el of elements) {
             if (el.id === id) return el;
             if (el.children) {
-                const found = findElement(el.children, id);
+                const found = findElementById(el.children, id);
                 if (found) return found;
             }
         }
         return null;
     };
 
+    // Remove element by ID recursively
+    const removeElementById = (elements, id) => {
+        return elements
+            .filter(el => el.id !== id)
+            .map(el => ({
+                ...el,
+                children: el.children ? removeElementById(el.children, id) : []
+            }));
+    };
 
-    const addElement = (type, parentId = null, extraProps = {}) => {
-        const newElement = {
+    // Insert element at specific position
+    const insertElement = (elements, targetId, newElement, position) => {
+        const result = [];
+
+        for (let i = 0; i < elements.length; i++) {
+            const el = elements[i];
+
+            if (el.id === targetId) {
+                // Found target
+                if (position === 'before') {
+                    result.push(newElement);
+                    result.push(el);
+                } else if (position === 'after') {
+                    result.push(el);
+                    result.push(newElement);
+                } else if (position === 'inside') {
+                    result.push({
+                        ...el,
+                        children: [newElement, ...(el.children || [])]
+                    });
+                }
+            } else {
+                // Check children
+                if (el.children && el.children.length > 0) {
+                    result.push({
+                        ...el,
+                        children: insertElement(el.children, targetId, newElement, position)
+                    });
+                } else {
+                    result.push(el);
+                }
+            }
+        }
+
+        return result;
+    };
+
+    // Check if target is descendant of source
+    const isDescendant = (sourceId, targetId) => {
+        const source = findElementById(state.elements, sourceId);
+        if (!source || !source.children) return false;
+
+        const check = (children) => {
+            for (const child of children) {
+                if (child.id === targetId) return true;
+                if (child.children && check(child.children)) return true;
+            }
+            return false;
+        };
+
+        return check(source.children);
+    };
+
+    // Check if element can accept children
+    const isNestable = (element) => {
+        if (!element) return false;
+        return element.type === 'container';
+    };
+
+    // Create new element
+    const createNewElement = (type, extraProps = {}) => {
+        const baseElement = {
             id: uuidv4(),
             type,
             children: [],
             content: {
-                ...extraProps, // tagName, etc.
+                ...extraProps,
                 padding: '10px',
                 margin: '0',
                 color: '#e5e5e5',
                 fontSize: '16px',
                 backgroundColor: 'transparent',
-                // Text default
                 text: type === 'text' ? 'New Text' : '',
-                // Image defaults
                 url: type === 'image' ? 'https://via.placeholder.com/150' : '',
-                // Button defaults
                 label: type === 'button' ? 'Click Me' : '',
-                // Container defaults
                 flexDirection: 'column',
                 gap: '0px',
-                // HTML
                 html: '<div>HTML</div>'
             }
         };
 
-        // Specific type defaults
         if (type === 'container') {
-            if (!newElement.content.tagName) newElement.content.tagName = 'div';
-            if (newElement.content.tagName === 'section') newElement.content.minHeight = '100px';
+            if (!baseElement.content.tagName) baseElement.content.tagName = 'div';
+            if (baseElement.content.tagName === 'section') baseElement.content.minHeight = '100px';
         }
 
-        if (parentId) {
-            const newElements = addElementToParent(state.elements, parentId, newElement);
-            dispatch({ type: 'UPDATE_ELEMENTS', payload: newElements });
+        return baseElement;
+    };
+
+    const addElement = (type, parentId = null, extraProps = {}) => {
+        console.log('>>> addElement called:', { type, parentId, extraProps });
+
+        let targetId = parentId;
+
+        // If no parent specified and something is selected, try to use it
+        if (!targetId && state.selectedElementId) {
+            const selected = findElementById(state.elements, state.selectedElementId);
+            console.log('Selected element:', selected);
+            if (selected && selected.type === 'container') {
+                targetId = selected.id;
+                console.log('Using selected container as target:', targetId);
+            }
+        }
+
+        const newElement = createNewElement(type, extraProps);
+        console.log('Created new element:', newElement);
+
+        let newElements;
+        if (targetId) {
+            console.log('Adding to parent:', targetId);
+            newElements = insertElement(state.elements, targetId, newElement, 'inside');
         } else {
-            // Add to root
-            dispatch({ type: 'ADD_ELEMENT', payload: newElement });
+            console.log('Adding to root');
+            newElements = [...state.elements, newElement];
         }
 
-        // Auto select
+        console.log('New elements after add:', newElements);
+        dispatch({ type: 'UPDATE_ELEMENTS', payload: newElements });
         dispatch({ type: 'SELECT_ELEMENT', payload: newElement.id });
     };
 
     const updateElement = (id, updates) => {
-        const newElements = updateElementInTree(state.elements, id, updates);
+        const updateInTree = (elements) => {
+            return elements.map(el => {
+                if (el.id === id) {
+                    return { ...el, ...updates };
+                }
+                if (el.children) {
+                    return { ...el, children: updateInTree(el.children) };
+                }
+                return el;
+            });
+        };
+
+        const newElements = updateInTree(state.elements);
         dispatch({ type: 'UPDATE_ELEMENTS', payload: newElements });
     };
 
     const removeElement = (id) => {
-        const newElements = removeElementFromTree(state.elements, id);
+        const newElements = removeElementById(state.elements, id);
         dispatch({ type: 'UPDATE_ELEMENTS', payload: newElements });
         if (state.selectedElementId === id) {
             dispatch({ type: 'SELECT_ELEMENT', payload: null });
         }
     };
 
-    const moveElement = (sourceId, targetParentId) => {
-        if (sourceId === targetParentId) return;
+    const moveElement = (sourceId, targetId, position = 'inside') => {
+        console.log('=== MOVE ELEMENT START ===');
+        console.log('Source:', sourceId, 'Target:', targetId, 'Position:', position);
+        console.log('Current elements:', JSON.stringify(state.elements, null, 2));
 
-        // 1. Find the element
-        const elementToMove = findElement(state.elements, sourceId);
-        if (!elementToMove) return;
-
-        // 2. Remove from old pos
-        const elementsWithoutSource = removeElementFromTree(state.elements, sourceId);
-
-        // 3. Add to new pos
-        let newElements;
-        if (targetParentId) {
-            newElements = addElementToParent(elementsWithoutSource, targetParentId, elementToMove);
-        } else {
-            newElements = [...elementsWithoutSource, elementToMove];
+        // Validation
+        if (!sourceId || !targetId) {
+            console.error('Missing sourceId or targetId');
+            return;
         }
 
+        if (sourceId === targetId) {
+            console.error('Cannot move element to itself');
+            return;
+        }
+
+        if (isDescendant(sourceId, targetId)) {
+            console.error('Cannot move element into its own descendant');
+            return;
+        }
+
+        // Find elements
+        const elementToMove = findElementById(state.elements, sourceId);
+        const targetElement = findElementById(state.elements, targetId);
+
+        if (!elementToMove) {
+            console.error('Source element not found:', sourceId);
+            return;
+        }
+
+        if (!targetElement) {
+            console.error('Target element not found:', targetId);
+            return;
+        }
+
+        console.log('Element to move:', elementToMove);
+        console.log('Target element:', targetElement);
+
+        // Validate position
+        if (position === 'inside' && !isNestable(targetElement)) {
+            console.error('Target element cannot accept children. Type:', targetElement.type);
+            return;
+        }
+
+        // Remove from current position
+        let newElements = removeElementById(state.elements, sourceId);
+        console.log('After removal:', JSON.stringify(newElements, null, 2));
+
+        // Insert at new position
+        newElements = insertElement(newElements, targetId, elementToMove, position);
+        console.log('After insertion:', JSON.stringify(newElements, null, 2));
+
+        if (!newElements || newElements.length === 0) {
+            console.error('Insert failed - no elements returned');
+            return;
+        }
+
+        // Update state
+        console.log('Dispatching UPDATE_ELEMENTS');
         dispatch({ type: 'UPDATE_ELEMENTS', payload: newElements });
+        console.log('=== MOVE ELEMENT END ===');
     };
 
     const selectElement = (id) => {
+        console.log('Selecting element:', id);
         dispatch({ type: 'SELECT_ELEMENT', payload: id });
     };
 

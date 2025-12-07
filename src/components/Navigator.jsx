@@ -1,17 +1,24 @@
 import React from 'react';
 import { useEditorState } from '../hooks/useEditorState';
 import { useElementActions } from '../hooks/useElementActions';
-import { FaColumns, FaImage, FaFont, FaSquare, FaLink, FaCode } from 'react-icons/fa';
+import { FaColumns, FaImage, FaFont, FaSquare, FaLink, FaCode, FaTrash } from 'react-icons/fa';
 
 const NavigatorItem = ({ element, depth = 0 }) => {
     const { state } = useEditorState();
-    const { selectElement, moveElement } = useElementActions();
+    const { selectElement, moveElement, removeElement } = useElementActions();
     const isSelected = state.selectedElementId === element.id;
-    const [isOver, setIsOver] = React.useState(false);
+
+    // Drag state: 'before', 'after', 'inside' (if container), or null
+    const [dragPosition, setDragPosition] = React.useState(null);
 
     const handleSelect = (e) => {
         e.stopPropagation();
         selectElement(element.id);
+    };
+
+    const handleDelete = (e) => {
+        e.stopPropagation();
+        removeElement(element.id);
     };
 
     const handleDragStart = (e) => {
@@ -23,25 +30,46 @@ const NavigatorItem = ({ element, depth = 0 }) => {
     const handleDragOver = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (element.type === 'container') {
-            setIsOver(true);
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const height = rect.height;
+        const isContainer = element.type === 'container';
+
+        // Zones:
+        // Top 25% -> Before
+        // Bottom 25% -> After
+        // Middle 50% -> Inside (if container) OR split between before/after
+
+        if (y < height * 0.25) {
+            setDragPosition('before');
+        } else if (y > height * 0.75) {
+            setDragPosition('after');
+        } else {
+            if (isContainer) {
+                setDragPosition('inside');
+            } else {
+                setDragPosition(y < height * 0.5 ? 'before' : 'after');
+            }
         }
     };
 
     const handleDragLeave = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        setIsOver(false);
+        setDragPosition(null);
     };
 
     const handleDrop = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        setIsOver(false);
+
         const sourceId = e.dataTransfer.getData('sourceId');
-        if (sourceId && sourceId !== element.id && element.type === 'container') {
-            moveElement(sourceId, element.id);
+
+        if (sourceId && sourceId !== element.id && dragPosition) {
+            moveElement(sourceId, element.id, dragPosition);
         }
+        setDragPosition(null);
     };
 
     const getIcon = (type) => {
@@ -54,6 +82,12 @@ const NavigatorItem = ({ element, depth = 0 }) => {
             default: return <FaSquare />;
         }
     };
+
+    // Style for drag feedback
+    let borderStyle = {};
+    if (dragPosition === 'before') borderStyle = { borderTop: '2px solid var(--primary)' };
+    if (dragPosition === 'after') borderStyle = { borderBottom: '2px solid var(--primary)' };
+    if (dragPosition === 'inside') borderStyle = { backgroundColor: 'rgba(0,183,255,0.2)', border: '1px solid var(--primary)' };
 
     return (
         <div>
@@ -68,20 +102,38 @@ const NavigatorItem = ({ element, depth = 0 }) => {
                     padding: '6px 8px',
                     paddingLeft: `${depth * 12 + 12}px`,
                     cursor: 'pointer',
-                    backgroundColor: isOver ? 'rgba(0,183,255,0.2)' : (isSelected ? 'var(--primary)' : 'transparent'),
+                    backgroundColor: isSelected ? 'var(--primary)' : 'transparent',
                     color: isSelected ? '#fff' : 'var(--text)',
                     display: 'flex',
                     alignItems: 'center',
                     fontSize: '11px',
                     gap: '8px',
                     borderBottom: '1px solid rgba(255,255,255,0.02)',
-                    opacity: isOver ? 0.8 : 1
+                    transition: 'all 0.1s',
+                    ...borderStyle
                 }}
             >
                 <span style={{ opacity: 0.7, fontSize: '10px' }}>{getIcon(element.type)}</span>
-                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {element.content.tagName || element.type}
                 </span>
+                <button
+                    onClick={handleDelete}
+                    style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: isSelected ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)',
+                        padding: '2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        opacity: 0.6,
+                        fontSize: '10px'
+                    }}
+                    title="Delete"
+                >
+                    <FaTrash />
+                </button>
             </div>
             {element.children && element.children.length > 0 && (
                 <div>

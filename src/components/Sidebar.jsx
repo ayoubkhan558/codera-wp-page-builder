@@ -1,23 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { Panel, PanelHeader, PanelSection, Input, Button } from '../ui';
 import { useEditorState } from '../hooks/useEditorState';
+import { useElementActions } from '../hooks/useElementActions';
 import InspectorPanel from './InspectorPanel';
 import {
     FaCube, FaColumns, FaHeading, FaParagraph, FaImage, FaLink,
     FaCode, FaRegSquare, FaList, FaSearch, FaPaintBrush, FaEdit, FaPlus
 } from 'react-icons/fa';
 
+// Redefine DraggableItem to use the hook directly since it's inside the Provider context
 const DraggableItem = ({ type, label, icon, tagName }) => {
+    const { addElement } = useElementActions();
+
+    // Forward to internal structure
+    return (
+        <DraggableItemInternal
+            type={type}
+            label={label}
+            icon={icon}
+            tagName={tagName}
+            addElement={addElement}
+        />
+    );
+};
+
+// ... Wait, let's rewrite the component structure clearly.
+
+const DraggableItemInternal = ({ type, label, icon, tagName, addElement }) => {
+    // const { addElement } = useElementActions(); // Logic moved up
+
     const handleDragStart = (e) => {
         e.dataTransfer.setData('type', type);
         e.dataTransfer.setData('tagName', tagName || type);
         e.effectAllowed = 'copy';
     };
 
+    const handleClick = () => {
+        addElement(type, null, { tagName });
+    };
+
     return (
         <div
             draggable
             onDragStart={handleDragStart}
+            onClick={handleClick}
             style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -26,7 +52,7 @@ const DraggableItem = ({ type, label, icon, tagName }) => {
                 padding: '12px 6px',
                 border: '1px solid var(--border)',
                 borderRadius: '4px',
-                cursor: 'grab',
+                cursor: 'pointer',
                 backgroundColor: 'rgba(255,255,255,0.02)',
                 transition: 'background 0.2s, border-color 0.2s',
                 gap: '8px'
@@ -144,20 +170,17 @@ const Sidebar = () => {
                             <PanelSection title="Layout" defaultOpen={true}>
                                 <ElementGrid>
                                     <DraggableItem type="container" tagName="section" label="Section" icon={<FaColumns />} />
-                                    <DraggableItem type="container" tagName="div" label="Container" icon={<FaRegSquare />} />
-                                    <DraggableItem type="container" tagName="article" label="Article" icon={<FaCube />} />
-                                    <DraggableItem type="container" tagName="main" label="Main" icon={<FaCube />} />
+                                    <DraggableItem type="container" tagName="div" label="Div" icon={<FaRegSquare />} />
                                 </ElementGrid>
                             </PanelSection>
 
                             <PanelSection title="Basic" defaultOpen={true}>
                                 <ElementGrid>
-                                    <DraggableItem type="text" label="Heading" icon={<FaHeading />} />
-                                    <DraggableItem type="text" label="Paragraph" icon={<FaParagraph />} />
+                                    <DraggableItem type="text" tagName="h2" label="Heading" icon={<FaHeading />} />
+                                    <DraggableItem type="text" tagName="p" label="Paragraph" icon={<FaParagraph />} />
                                     <DraggableItem type="button" label="Button" icon={<FaLink />} />
                                     <DraggableItem type="image" label="Image" icon={<FaImage />} />
                                     <DraggableItem type="html" label="HTML" icon={<FaCode />} />
-                                    <DraggableItem type="text" label="Text Block" icon={<FaParagraph />} />
                                 </ElementGrid>
                             </PanelSection>
                         </div>

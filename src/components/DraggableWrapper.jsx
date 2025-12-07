@@ -45,8 +45,8 @@ const DraggableWrapper = ({ element, children }) => {
         // Logic check: Can this element accept children?
         if (element.type === 'container') {
             if (sourceId) {
-                // Move existing element
-                moveElement(sourceId, element.id);
+                // Move existing element inside this container
+                moveElement(sourceId, element.id, 'inside');
             } else if (type) {
                 // Add new element
                 addElement(type, element.id, { tagName });
